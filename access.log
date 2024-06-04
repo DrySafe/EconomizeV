@@ -1,0 +1,7 @@
+04-06-2024 15:33:10 info: Acesso de IP: ::1, Rota: /getProducts
+04-06-2024 15:33:10 info: Acesso de IP: ::1, Rota: /favicon.ico
+04-06-2024 15:33:28 info: Acesso de IP: ::1, Rota: /logEdit
+04-06-2024 15:33:28 info: Produto editado de IP: ::1, Ação: edit, Produto: {"codigo":"teste","produto":"111","quantidade":"1","motivo":"USO LOJA","dataVencimento":"","usuario":"daniel","valor":"110","dataHoraInsercao":"04/06/2024 15:33:26"}
+04-06-2024 15:34:36 info: Acesso de IP: ::1, Rota: /addProduct
+04-06-2024 15:34:36 info: Produto adicionado de IP: ::1, Produto: {"codigo":"233","produto":"teste1","quantidade":"5","motivo":"VENCIDO","dataVencimento":"23/12/2023","usuario":"dan","valor":"R$22","dataHoraInsercao":"04/06/2024 15:34:36"}
+04-06-2024 15:40:22 info: Acesso de IP: ::1, Rota: /exportToExcel

@@ -18,17 +18,14 @@ export function handleFormSubmit(event) {
     const produto = document.getElementById('produto').value;
     const quantidade = document.getElementById('quantidade').value;
     const motivo = document.getElementById('motivo').value;
-    let dataVencimento = document.getElementById('dataVencimento').value; // Armazene a data como string
-    const valor = document.getElementById('valor').value; // Capturar o valor do campo
+    let dataVencimento = document.getElementById('dataVencimento').value;
+    const valor = document.getElementById('valor').value;
 
-    // Formate a data para o padrão DD/MM/AAAA
     if (motivo === 'VENCIDO' && dataVencimento) {
-        dataVencimento = dateFormat(new Date(dataVencimento), "dd/mm/yyyy");
+        dataVencimento = new Date(dataVencimento).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
     }
 
     const usuario = document.getElementById('usuario').value;
-
-    // Obter a data e hora atuais e formatar para DD/MM/AAAA HH:mm:ss
     const dataHoraInsercao = new Date();
     const dataFormatada = dataHoraInsercao.toLocaleDateString('pt-BR');
     const horaFormatada = dataHoraInsercao.toLocaleTimeString('pt-BR');
@@ -41,12 +38,25 @@ export function handleFormSubmit(event) {
         motivo,
         dataVencimento: motivo === 'VENCIDO' ? dataVencimento : '',
         usuario,
-        valor, // Adicionar o valor ao objeto produtoData
-        dataHoraInsercao: dataHoraFormatada // Adicionar data e hora de inserção no formato brasileiro
+        valor,
+        dataHoraInsercao: dataHoraFormatada
     };
 
     if (editingRow !== null) {
         updateProductInTable(editingRow, produtoData);
+
+        // Registrar edição no log
+        fetch('/logEdit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'edit',
+                product: produtoData
+            })
+        });
+
         editingRow = null;
         document.getElementById('productForm').reset();
         document.getElementById('dataVencimentoGroup').style.display = 'none';
