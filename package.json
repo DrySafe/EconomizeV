@@ -1,0 +1,23 @@
+{
+  "name": "app-controle",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "stop": "Taskkill /IM node.exe /F"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "file-saver": "^2.0.5",
+    "webpack-cli": "^5.1.4",
+    "xlsx": "^0.18.5",
+    "xlsx-style": "^0.8.13"
+  }
+}
