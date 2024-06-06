@@ -4,17 +4,18 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const ExcelJS = require('exceljs');
-const logger = require('./logger');
+const winston = require('winston');
+
 
 const app = express();
-const port = process.env.PORT || 3500;
+const port = process.env.PORT || 3600;
+const userDataDir = path.join(os.homedir(), 'economizeData');
+const productsFilePath = path.join(userDataDir, 'vencimento.json');
+const logFilePath = path.join(userDataDir, 'access.log');
 
-const userDataDir = path.join(os.homedir(), 'EconomizeData');
 if (!fs.existsSync(userDataDir)) {
     fs.mkdirSync(userDataDir);
 }
-
-const productsFilePath = path.join(userDataDir, 'products.json');
 
 let products = [];
 
@@ -26,8 +27,12 @@ if (fs.existsSync(productsFilePath)) {
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+        new winston.transports.File({ filename: logFilePath })
+    ]
 });
 
 app.post('/addProduct', (req, res) => {
@@ -35,52 +40,40 @@ app.post('/addProduct', (req, res) => {
     products.push(product);
     saveProductsToFile();
     res.json({ message: 'Produto adicionado com sucesso!' });
-    logger.log(`Produto adicionado: ${JSON.stringify(product)}`);
 });
 
 app.get('/getProducts', (req, res) => {
     res.json(products);
-    logger.log(`Produtos acessados. Total: ${products.length}`);
 });
 
-app.get('/exportToExcel', async (req, res) => {
+app.get('/exportToExcel', (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Produtos');
-
     worksheet.columns = [
         { header: '#', key: 'id', width: 5 },
         { header: 'Código', key: 'codigo', width: 8 },
         { header: 'Produto', key: 'produto', width: 32 },
-        { header: 'Quantidade', key: 'quantidade', width: 12 },
-        { header: 'Valor', key: 'valor', width: 12 },
-        { header: 'Motivo', key: 'motivo', width: 13 },
+        { header: 'Quantidade em Loja', key: 'quantidadeEmLoja', width: 20 },
+        { header: 'Quantidade em Estoque', key: 'quantidadeEmEstoque', width: 20 },
         { header: 'Data de Vencimento', key: 'dataVencimento', width: 19 },
         { header: 'Usuário', key: 'usuario', width: 12 },
         { header: 'Data e Hora de Inserção', key: 'dataHoraInsercao', width: 25 }
     ];
 
     products.forEach((product, index) => {
-        worksheet.addRow({
-            id: index + 1,
-            ...product,
-            dataVencimento: product.motivo === 'VENCIDO' ? product.dataVencimento : '',
-        });
+        const { codigo, produto, quantidadeEmLoja, quantidadeEmEstoque, dataVencimento, usuario, dataHoraInsercao } = product;
+        worksheet.addRow({ id: index + 1, codigo, produto, quantidadeEmLoja, quantidadeEmEstoque, dataVencimento, usuario, dataHoraInsercao });
     });
 
     worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
-        row.eachCell({ includeEmpty: false }, function (cell, colNumber) {
-            cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
+        row.eachCell({ includeEmpty: false }, function (cell) {
+            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
             if (rowNumber === 1) {
                 cell.fill = {
                     type: 'pattern',
                     pattern: 'solid',
-                    fgColor: { argb: 'FF9800' }
+                    fgColor: { argb: 'ff9800' }
                 };
                 cell.font = { bold: true };
             } else {
@@ -93,13 +86,19 @@ app.get('/exportToExcel', async (req, res) => {
         });
     });
 
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=produtos.xlsx');
+    res.setHeader('Content-Disposition', 'attachment; filename=vencimento.xlsx');
 
-    await workbook.xlsx.write(res);
-    res.end();
-
-    logger.log('Exportação para Excel realizada');
+    workbook.xlsx.write(res)
+        .then(() => {
+            res.end();
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(500).send('Erro ao exportar para Excel');
+        });
 });
 
 app.post('/resetProducts', (req, res) => {
@@ -109,20 +108,44 @@ app.post('/resetProducts', (req, res) => {
         return res.status(401).json({ message: 'Senha incorreta' });
     }
 
-    const backupFilePath = path.join(userDataDir, `products_backup_${Date.now()}.json`);
+    const backupFilePath = path.join(userDataDir, `vencimento_backup_${Date.now()}.json`);
     fs.copyFileSync(productsFilePath, backupFilePath);
 
     products = [];
     saveProductsToFile();
 
-    res.json({ success: true, message: 'Lista de produtos resetada com sucesso' });
-    logger.log('Lista de produtos resetada e backup criado');
+    res.json({ success: true, message: 'Lista de vencimento resetada com sucesso' });
+    logger.log('info', 'Lista de vencimento resetada e backup criado');
+});
+
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
 });
 
 function saveProductsToFile() {
     fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 4));
 }
 
-app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+function logAccess(req) {
+    macaddress.one((err, mac) => {
+        if (err) {
+            console.error('Erro ao obter o endereço MAC:', err);
+            return;
+        }
+
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            method: req.method,
+            url: req.originalUrl,
+            ip: req.ip,
+            mac: mac
+        };
+
+        logger.info(logEntry);
+    });
+}
+
+app.use((req, res, next) => {
+    logAccess(req);
+    next();
 });

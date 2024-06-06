@@ -16,16 +16,16 @@ export function handleFormSubmit(event) {
 
     const codigo = document.getElementById('codigo').value;
     const produto = document.getElementById('produto').value;
-    const quantidade = document.getElementById('quantidade').value;
-    const motivo = document.getElementById('motivo').value;
+    const quantidadeEmLoja = document.getElementById('quantidadeEmLoja').value;
+    const quantidadeEmEstoque = document.getElementById('quantidadeEmEstoque').value;
     let dataVencimento = document.getElementById('dataVencimento').value;
-    const valor = document.getElementById('valor').value;
 
-    if (motivo === 'VENCIDO' && dataVencimento) {
+    if (dataVencimento) {
         dataVencimento = new Date(dataVencimento).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
     }
 
     const usuario = document.getElementById('usuario').value;
+
     const dataHoraInsercao = new Date();
     const dataFormatada = dataHoraInsercao.toLocaleDateString('pt-BR');
     const horaFormatada = dataHoraInsercao.toLocaleTimeString('pt-BR');
@@ -34,32 +34,17 @@ export function handleFormSubmit(event) {
     const produtoData = {
         codigo,
         produto,
-        quantidade,
-        motivo,
-        dataVencimento: motivo === 'VENCIDO' ? dataVencimento : '',
+        quantidadeEmLoja,
+        quantidadeEmEstoque,
+        dataVencimento,
         usuario,
-        valor,
         dataHoraInsercao: dataHoraFormatada
     };
 
     if (editingRow !== null) {
         updateProductInTable(editingRow, produtoData);
-
-        // Registrar edição no log
-        fetch('/logEdit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                action: 'edit',
-                product: produtoData
-            })
-        });
-
         editingRow = null;
         document.getElementById('productForm').reset();
-        document.getElementById('dataVencimentoGroup').style.display = 'none';
     } else {
         fetch('/addProduct', {
             method: 'POST',
@@ -73,7 +58,6 @@ export function handleFormSubmit(event) {
             alert('Produto adicionado com sucesso!');
             addProductToTable(produtoData);
             document.getElementById('productForm').reset();
-            document.getElementById('dataVencimentoGroup').style.display = 'none';
         })
         .catch(error => {
             console.error('Error:', error);
@@ -81,6 +65,5 @@ export function handleFormSubmit(event) {
     }
 }
 
-// Tornar editProduct acessível no escopo global
 import { editProduct } from './table-handler.js';
 window.editProduct = editProduct;

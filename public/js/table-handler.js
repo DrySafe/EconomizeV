@@ -10,10 +10,9 @@ export function addProductToTable(produto) {
     row.innerHTML = `
         <td>${productCount}</td>
         <td>${produto.codigo}</td>
-        <td>${produto.valor}</td> <!-- Novo campo de valor -->
         <td>${produto.produto}</td>
-        <td>${produto.quantidade}</td>
-        <td>${produto.motivo}</td>
+        <td>${produto.quantidadeEmLoja}</td>
+        <td>${produto.quantidadeEmEstoque}</td>
         <td>${produto.dataVencimento}</td>
         <td>${produto.usuario}</td>
         <td>${produto.dataHoraInsercao}</td>
@@ -32,30 +31,21 @@ export function editProduct(button) {
     setEditingRow(row);
 
     document.getElementById('codigo').value = row.children[1].innerText;
-    document.getElementById('valor').value = row.children[2].innerText; // Novo campo de valor
-    document.getElementById('produto').value = row.children[3].innerText;
-    document.getElementById('quantidade').value = row.children[4].innerText;
-    document.getElementById('motivo').value = row.children[5].innerText;
-    document.getElementById('dataVencimento').value = row.children[6].innerText;
-    document.getElementById('usuario').value = row.children[7].innerText;
-
-    if (row.children[5].innerText === 'VENCIDO') {
-        document.getElementById('dataVencimentoGroup').style.display = 'block';
-    } else
-    {
-        document.getElementById('dataVencimentoGroup').style.display = 'none';
-    }
+    document.getElementById('produto').value = row.children[2].innerText;
+    document.getElementById('quantidadeEmLoja').value = row.children[3].innerText;
+    document.getElementById('quantidadeEmEstoque').value = row.children[4].innerText;
+    document.getElementById('dataVencimento').value = row.children[5].innerText;
+    document.getElementById('usuario').value = row.children[6].innerText;
 }
 
 export function updateProductInTable(row, produto) {
     row.children[1].innerText = produto.codigo;
-    row.children[2].innerText = produto.valor; // Atualiza o valor do produto
-    row.children[3].innerText = produto.produto;
-    row.children[4].innerText = produto.quantidade;
-    row.children[5].innerText = produto.motivo;
-    row.children[6].innerText = produto.dataVencimento;
-    row.children[7].innerText = produto.usuario;
-    row.children[8].innerText = produto.dataHoraInsercao; // Atualiza a nova coluna de data e hora
+    row.children[2].innerText = produto.produto;
+    row.children[3].innerText = produto.quantidadeEmLoja;
+    row.children[4].innerText = produto.quantidadeEmEstoque;
+    row.children[5].innerText = produto.dataVencimento;
+    row.children[6].innerText = produto.usuario;
+    row.children[7].innerText = produto.dataHoraInsercao;
 
     alert('Produto atualizado com sucesso!');
 }

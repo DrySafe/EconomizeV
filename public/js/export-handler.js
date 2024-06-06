@@ -7,7 +7,7 @@ export function exportToExcel() {
             const url = window.URL.createObjectURL(new Blob([blob]));
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'produtos.xlsx';
+            a.download = 'vencimento.xlsx';
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
