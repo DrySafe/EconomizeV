@@ -2,17 +2,22 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const ExcelJS = require('exceljs');
-const requestIp = require('request-ip');
-const logger = require('./logger'); // Importar o logger
+const logger = require('./logger');
 
 const app = express();
 const port = process.env.PORT || 3500;
-const productsFilePath = path.join(__dirname, 'products.json');
+
+const userDataDir = path.join(os.homedir(), 'EconomizeData');
+if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir);
+}
+
+const productsFilePath = path.join(userDataDir, 'products.json');
 
 let products = [];
 
-// Verificar se o arquivo JSON de produtos existe e carregá-lo
 if (fs.existsSync(productsFilePath)) {
     const productsData = fs.readFileSync(productsFilePath);
     products = JSON.parse(productsData);
@@ -21,42 +26,27 @@ if (fs.existsSync(productsFilePath)) {
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware para registrar acessos
-app.use((req, res, next) => {
-    const clientIp = requestIp.getClientIp(req); 
-    logger.info(`Acesso de IP: ${clientIp}, Rota: ${req.originalUrl}`);
-    next();
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.post('/addProduct', (req, res) => {
     const product = req.body;
     products.push(product);
     saveProductsToFile();
-    
-    const clientIp = requestIp.getClientIp(req); 
-    logger.info(`Produto adicionado de IP: ${clientIp}, Produto: ${JSON.stringify(product)}`);
-
     res.json({ message: 'Produto adicionado com sucesso!' });
+    logger.log(`Produto adicionado: ${JSON.stringify(product)}`);
 });
-
-app.post('/logEdit', (req, res) => {
-    const product = req.body.product;
-    const action = req.body.action;
-    const clientIp = requestIp.getClientIp(req);
-    
-    logger.info(`Produto editado de IP: ${clientIp}, Ação: ${action}, Produto: ${JSON.stringify(product)}`);
-    
-    res.json({ message: 'Edição registrada com sucesso!' });
-});
-
 
 app.get('/getProducts', (req, res) => {
     res.json(products);
+    logger.log(`Produtos acessados. Total: ${products.length}`);
 });
 
-app.get('/exportToExcel', (req, res) => {
+app.get('/exportToExcel', async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Produtos');
+
     worksheet.columns = [
         { header: '#', key: 'id', width: 5 },
         { header: 'Código', key: 'codigo', width: 8 },
@@ -66,36 +56,31 @@ app.get('/exportToExcel', (req, res) => {
         { header: 'Motivo', key: 'motivo', width: 13 },
         { header: 'Data de Vencimento', key: 'dataVencimento', width: 19 },
         { header: 'Usuário', key: 'usuario', width: 12 },
-        { header: 'Data e Hora de Inserção', key: 'dataHoraInsercao', width: 25 },
-        { header: '', key: 'empty', width: 2 },
-        { header: 'ROTINA', key: 'novaColuna', width: 20 },
-        { header: '', key: 'novaColuna2', width: 20 }
+        { header: 'Data e Hora de Inserção', key: 'dataHoraInsercao', width: 25 }
     ];
 
     products.forEach((product, index) => {
-        const { codigo, produto, quantidade, valor, motivo, dataVencimento, usuario, dataHoraInsercao } = product;
-        worksheet.addRow({ id: index + 1, codigo, produto, quantidade, valor, motivo, dataVencimento, usuario, dataHoraInsercao, empty: '', novaColuna: '' });
-    });
-
-    const listaDeItens = ['Filial', 'Cliente', 'Produtos', 'Quantidade', 'CÓD Fiscal', 'Conta Avaria', 'Conta Consumidor', '', 'TOTAL AVARIA', 'TOTAL USO LOJA', 'TOTAL VENCIMENTO'];
-    listaDeItens.forEach((item, index) => {
-        worksheet.getCell(index + 2, 11).value = item;
-    });
-
-    const listaDeItens2 = ['', '', '', '', '', '', '', '', '', '', ''];
-    listaDeItens2.forEach((item, index) => {
-        worksheet.getCell(index + 2, 12).value = item;
+        worksheet.addRow({
+            id: index + 1,
+            ...product,
+            dataVencimento: product.motivo === 'VENCIDO' ? product.dataVencimento : '',
+        });
     });
 
     worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
         row.eachCell({ includeEmpty: false }, function (cell, colNumber) {
-            cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+            cell.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' }
+            };
             cell.alignment = { vertical: 'middle', horizontal: 'center' };
             if (rowNumber === 1) {
                 cell.fill = {
                     type: 'pattern',
                     pattern: 'solid',
-                    fgColor: { argb: 'ff9800' }
+                    fgColor: { argb: 'FF9800' }
                 };
                 cell.font = { bold: true };
             } else {
@@ -108,23 +93,32 @@ app.get('/exportToExcel', (req, res) => {
         });
     });
 
-    worksheet.getColumn('novaColuna').alignment = { horizontal: 'left' };
-    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
-
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=produtos.xlsx');
 
-    workbook.xlsx.write(res)
-        .then(() => {
-            res.end();
-        })
-        .catch((err) => {
-            console.log(err);
-            res.status(500).send('Erro ao exportar para Excel');
-        });
+    await workbook.xlsx.write(res);
+    res.end();
+
+    logger.log('Exportação para Excel realizada');
 });
 
-// Função para salvar os produtos em um arquivo JSON
+app.post('/resetProducts', (req, res) => {
+    const { password } = req.body;
+
+    if (password !== '1234') {
+        return res.status(401).json({ message: 'Senha incorreta' });
+    }
+
+    const backupFilePath = path.join(userDataDir, `products_backup_${Date.now()}.json`);
+    fs.copyFileSync(productsFilePath, backupFilePath);
+
+    products = [];
+    saveProductsToFile();
+
+    res.json({ success: true, message: 'Lista de produtos resetada com sucesso' });
+    logger.log('Lista de produtos resetada e backup criado');
+});
+
 function saveProductsToFile() {
     fs.writeFileSync(productsFilePath, JSON.stringify(products, null, 4));
 }

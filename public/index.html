@@ -17,18 +17,17 @@
         <div class="form-container">
             <form id="productForm">
                 <div class="form-group">
-                    <div class="form-group">
-                        <label for="produto">Nome do Produto:</label>
-                        <input type="text" id="produto" required>
-                    </div>
+                    <label for="produto">Nome do Produto:</label>
+                    <input type="text" id="produto" required>
+                </div>
+                <div class="form-group">
                     <label for="codigo">Código do Produto:</label>
                     <input type="text" id="codigo" required>
                 </div>
                 <div class="form-group">
                     <label for="valor">Valor do Produto:</label>
-                    <input type="text" id="valor" step="0.01" min="0" value="R$" pattern= "[R$,0-9]+" required> <!-- Novo campo de valor -->
+                    <input type="text" id="valor" step="0.01" min="0" value="R$" pattern="[R$,0-9]+" required>
                 </div>
-                
                 <div class="form-group">
                     <label for="quantidade">Quantidade:</label>
                     <input type="number" id="quantidade" required>
@@ -62,7 +61,7 @@
                     <tr>
                         <th>#</th>
                         <th>Código</th>
-                        <th>Valor</th> <!-- Novo cabeçalho para valor -->
+                        <th>Valor</th>
                         <th>Produto</th>
                         <th>Quantidade</th>
                         <th>Motivo</th>
@@ -73,14 +72,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Linhas da tabela serão inseridas aqui -->
                 </tbody>
             </table>
             <button id="exportExcelButton" class="btn-primary">Exportar para Excel</button>
+            <button id="resetButton" class="btn-danger">Resetar Lista de Produtos</button>
         </div>
     </div>
     
-    <!-- Scripts -->
     <script src="js/form-handler.js" type="module"></script>
     <script src="js/table-handler.js" type="module"></script>
     <script src="js/autocomplete.js" type="module"></script>

@@ -1,19 +1,24 @@
-const { createLogger, format, transports } = require('winston');
+const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const logFilePath = path.join(__dirname, 'access.log');
+// Define o diretório dos dados do usuário
+const userDataDir = path.join(os.homedir(), 'EconomizeData');
 
-const logger = createLogger({
-    level: 'info',
-    format: format.combine(
-        format.timestamp({
-            format: 'DD-MM-YYYY HH:mm:ss'
-        }),
-        format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-    ),
-    transports: [
-        new transports.File({ filename: logFilePath })
-    ]
-});
+// Certifica-se de que o diretório exista
+if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir);
+}
 
-module.exports = logger;
+// Define o caminho para o arquivo de log
+const logFilePath = path.join(userDataDir, 'log.txt');
+
+function log(message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}\n`;
+    fs.appendFileSync(logFilePath, logMessage);
+}
+
+module.exports = {
+    log
+};
