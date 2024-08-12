@@ -32,11 +32,20 @@ app.get('/', (req, res) => {
 
 app.post('/addProduct', (req, res) => {
     const product = req.body;
+
+    // Converter dataVencimento de dd/mm/aaaa para YYYY-MM-DD
+    if (product.dataVencimento) {
+        const [day, month, year] = product.dataVencimento.split('/');
+        product.dataVencimento = `${year}-${month}-${day}`;
+    }
+
     products.push(product);
     saveProductsToFile();
     res.json({ message: 'Produto adicionado com sucesso!' });
     logger.log(`Produto adicionado: ${JSON.stringify(product)}`);
 });
+
+
 
 app.get('/getProducts', (req, res) => {
     res.json(products);

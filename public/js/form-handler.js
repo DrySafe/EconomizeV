@@ -21,8 +21,10 @@ export function handleFormSubmit(event) {
     let dataVencimento = document.getElementById('dataVencimento').value;
     const valor = document.getElementById('valor').value;
 
+    // Formatar dataVencimento para dd/mm/aaaa
     if (motivo === 'VENCIDO' && dataVencimento) {
-        dataVencimento = new Date(dataVencimento).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const [year, month, day] = dataVencimento.split('-');
+        dataVencimento = `${day}/${month}/${year}`;
     }
 
     const usuario = document.getElementById('usuario').value;
@@ -80,6 +82,9 @@ export function handleFormSubmit(event) {
         });
     }
 }
+
+
+
 
 // Tornar editProduct acessível no escopo global
 import { editProduct } from './table-handler.js';
